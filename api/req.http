@@ -1,0 +1,99 @@
+@baseUrl = http://localhost:4040
+@apiUrl = {{baseUrl}}/api/v1
+@contentType = application/json
+
+###############################################
+# Health Check
+###############################################
+
+### Health Check
+GET {{baseUrl}}/health
+
+
+###############################################
+# Authentication Routes
+###############################################
+
+### 1. Register / Signup
+POST {{apiUrl}}/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "test@example.com",
+  "password": "password123",
+  "name": "Test User"
+}
+
+###
+
+### 2. Register without name (optional)
+POST {{apiUrl}}/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "user2@example.com",
+  "password": "password123"
+}
+
+###
+
+### 3. Login / Signin
+POST {{apiUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+
+### 4. Refresh Token
+# Note: Requires refreshToken cookie from login/register
+POST {{apiUrl}}/auth/refresh-token
+
+###
+
+### 5. Logout
+# Note: Will clear cookies
+POST {{apiUrl}}/auth/logout
+
+###
+
+
+###############################################
+# Test Cases - Invalid Requests
+###############################################
+
+### Invalid Email Format
+POST {{apiUrl}}/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "invalidemail",
+  "password": "password123"
+}
+
+###
+
+### Password Too Short
+POST {{apiUrl}}/auth/signup
+Content-Type: {{contentType}}
+
+{
+  "email": "test3@example.com",
+  "password": "123"
+}
+
+###
+
+### Wrong Credentials
+POST {{apiUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "test@example.com",
+  "password": "wrongpassword"
+}
+
+###

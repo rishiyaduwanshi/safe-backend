@@ -1,0 +1,12 @@
+[run]
+
+watch = [
+    "src/**",
+    ".env.dev"
+]
+
+ignore = [
+    "node_modules/**",
+    "logs/**",
+    "dist/**"
+]
