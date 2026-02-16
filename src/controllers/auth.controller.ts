@@ -21,7 +21,6 @@ interface UserResponseData {
 
 interface AuthResponseData {
   user: UserResponseData;
-  token: string;
 }
 
 // Utility: Convert User document to safe response object
@@ -37,16 +36,16 @@ const toUserResponse = (user: IUser): UserResponseData => ({
 // Generate JWT tokens
 const generateTokens = (userId: mongoose.Types.ObjectId): TokenPair => {
   const payload: CustomJwtPayload = { id: userId.toString() };
-  
+
   const accessToken = jwt.sign(
-    payload, 
-    config.JWT_SECRET, 
+    payload,
+    config.JWT_SECRET,
     { expiresIn: config.JWT_EXPIRY } as SignOptions
   );
 
   const refreshToken = jwt.sign(
-    payload, 
-    config.JWT_REFRESH_SECRET, 
+    payload,
+    config.JWT_REFRESH_SECRET,
     { expiresIn: config.JWT_REFRESH_EXPIRY } as SignOptions
   );
 
@@ -81,7 +80,7 @@ export const register = async (
     appResponse<AuthResponseData>(res, {
       statusCode: HttpStatus.CREATED,
       message: 'User registered successfully',
-      data: { user: userResponse, token: tokens.accessToken },
+      data: { user: userResponse },
     });
   } catch (error) {
     next(error);
@@ -111,8 +110,8 @@ export const login = async (
     setTokenCookies(res, tokens);
 
     appResponse<AuthResponseData>(res, {
-      message: 'Login successful',
-      data: { user: userResponse, token: tokens.accessToken },
+      message: 'Signin successful',
+      data: { user: userResponse },
     });
   } catch (error) {
     next(error);
@@ -127,13 +126,13 @@ export const refreshToken = async (
 ): Promise<void> => {
   try {
     const { refreshToken } = req.cookies as { refreshToken?: string };
-    
+
     if (!refreshToken) {
       throw new UnauthorizedError('Refresh token not found in cookie');
     }
 
     const decoded = jwt.verify(refreshToken, config.JWT_REFRESH_SECRET) as CustomJwtPayload;
-    
+
     const user = await UserModel.findById(decoded.id);
     if (!user || user.refreshToken !== refreshToken) {
       throw new UnauthorizedError('Invalid refresh token');
@@ -164,10 +163,10 @@ export const logout = async (
 ): Promise<void> => {
   try {
     const userId = req.user?.id;
-    
+
     if (userId) {
       await UserModel.updateRefreshToken(
-        new mongoose.Types.ObjectId(userId), 
+        new mongoose.Types.ObjectId(userId),
         null
       );
     }

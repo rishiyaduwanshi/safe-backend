@@ -16,8 +16,8 @@ import {
 const router: Router = Router();
 
 router.post('/signup', validateBody(registerSchema), signup);
-router.post('/login', validateBody(loginSchema), signin);
+router.post('/signin', validateBody(loginSchema), signin);
 router.post('/refresh-token', validateCookies(refreshTokenSchema), refreshToken);
-router.post('/logout', signout);
+router.post('/signout', signout);
 
 export default router;
