@@ -23,20 +23,22 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Routes
 import indexRoutes from './routes/index';
 import authRoutes from './routes/auth.routes';
+import reportRoutes from './routes/report.routes';
 
 // API routes
 const api = express.Router();
 
 app.use('/', indexRoutes);
 api.use('/auth', authRoutes);
+api.use('/reports', reportRoutes);
 
 app.use(`/api/v${config.VERSION.split('.')[0]}`, api);
 
 // 404 handler for undefined routes
 app.use((_req: Request, _res: Response, next: NextFunction): void => {
-  next(new AppError({ 
-    statusCode: HttpStatus.NOT_FOUND, 
-    message: 'Route not found' 
+  next(new AppError({
+    statusCode: HttpStatus.NOT_FOUND,
+    message: 'Route not found'
   }));
 });
 

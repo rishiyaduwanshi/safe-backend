@@ -44,6 +44,9 @@ export const config: Readonly<Config> = Object.freeze({
   JWT_REFRESH_SECRET: env.JWT_REFRESH_SECRET,
   JWT_REFRESH_EXPIRY: env.JWT_REFRESH_EXPIRY,
 
+  // Groq AI
+  GROQ_API_KEY: env.GROQ_API_KEY,
+
   // CORS Config
   ALLOWED_ORIGINS: Object.freeze(env.ALLOWED_ORIGINS),
 

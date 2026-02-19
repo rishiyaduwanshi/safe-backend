@@ -5,13 +5,8 @@ import {
   refreshToken,
   logout as signout,
 } from '@/controllers/auth.controller';
-import {
-  validateBody,
-  validateCookies,
-  registerSchema,
-  loginSchema,
-  refreshTokenSchema,
-} from '@/validations';
+import { validateBody, validateCookies } from '@/middlewares/validate.mid';
+import { registerSchema, loginSchema, refreshTokenSchema } from '@/validations';
 
 const router: Router = Router();
 
