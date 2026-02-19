@@ -61,6 +61,93 @@ POST {{apiUrl}}/auth/signout
 
 
 ###############################################
+# Report Routes
+# Note: All report routes require accessToken cookie
+#       (login first to get the cookie)
+###############################################
+
+### 1. Submit a Report
+# location is optional — skip if not available
+POST {{apiUrl}}/reports
+Content-Type: {{contentType}}
+
+{
+  "reportText": "There is a large pothole on the main road near sector 5 which is causing accidents and damaging vehicles.",
+  "location": {
+    "lat": 28.6139,
+    "lng": 77.2090,
+    "address": "Sector 5, Rohini, New Delhi, Delhi 110085"
+  }
+}
+
+###
+
+### 2. Submit a Report - High Severity Example
+POST {{apiUrl}}/reports
+Content-Type: {{contentType}}
+
+{
+  "reportText": "A gas cylinder is leaking near the market area and there is a strong smell of gas. People nearby are at serious risk.",
+  "location": {
+    "lat": 30.9010,
+    "lng": 75.8573,
+    "address": "Model Town Market, Ludhiana, Punjab"
+  }
+}
+
+###
+
+### 3. Get My Reports (all reports submitted by logged-in user)
+GET {{apiUrl}}/reports/me
+
+###
+
+### 4. Get Report by ID
+# Replace :id with actual MongoDB ObjectId from a submitted report
+GET {{apiUrl}}/reports/64f1c2e5a2b3d4e5f6a7b8c9
+
+###
+
+###############################################
+# Report Routes - Validation Error Cases
+###############################################
+
+### Report Text Too Short (min 10 chars)
+POST {{apiUrl}}/reports
+Content-Type: {{contentType}}
+
+{
+  "reportText": "Pothole",
+  "location": {
+    "lat": 28.6139,
+    "lng": 77.2090,
+    "address": "Sector 5, New Delhi"
+  }
+}
+
+###
+
+### Invalid Location (lat/lng out of range)
+POST {{apiUrl}}/reports
+Content-Type: {{contentType}}
+
+{
+  "reportText": "Broken streetlight near the school causing danger at night for students.",
+  "location": {
+    "lat": 999,
+    "lng": 999,
+    "address": "Near City School, Jalandhar"
+  }
+}
+
+###
+
+### Invalid Report ID format (not a valid ObjectId)
+GET {{apiUrl}}/reports/invalid-id-here
+
+###
+
+###############################################
 # Test Cases - Invalid Requests
 ###############################################
 

@@ -1,0 +1,385 @@
+{
+    "info": {
+        "name": "SAFE Backend API",
+        "description": "Complete API reference for the SAFE (Safety Alert & Field Evidence) backend.\n\n## Auth Flow\n1. Call `POST /auth/signup` or `POST /auth/signin`\n2. `accessToken` and `refreshToken` cookies are set automatically\n3. All **Report** routes require the `accessToken` cookie\n\n## Notes\n- All responses follow `{ success, statusCode, message, data }` format\n- Validation errors return `{ success: false, errors: [{ field, message, code }] }`\n- Report text is classified by Groq AI — `needsReview: true` means AI confidence was low",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:4040"
+        },
+        {
+            "key": "apiUrl",
+            "value": "http://localhost:4040/api/v1"
+        }
+    ],
+    "item": [
+        {
+            "name": "Health",
+            "item": [
+                {
+                    "name": "Health Check",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/health",
+                        "description": "Check if the server is up and running."
+                    },
+                    "response": [
+                        {
+                            "name": "200 OK",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Server is healthy\",\n  \"data\": {\n    \"status\": \"UP\",\n    \"timestamp\": \"2026-02-20T10:00:00.000Z\",\n    \"uptime\": 120.53\n  }\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Signup",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{apiUrl}}/auth/signup",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"rishi@mail.com\",\n  \"password\": \"12345678\",\n  \"name\": \"Rishi Ranjana\"\n}"
+                        },
+                        "description": "Register a new user.\n\n**name** is optional — if skipped, part before `@` in email is used.\n\nOn success sets `accessToken` and `refreshToken` as HttpOnly cookies."
+                    },
+                    "response": [
+                        {
+                            "name": "201 Created",
+                            "status": "Created",
+                            "code": 201,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": true,\n  \"statusCode\": 201,\n  \"message\": \"User registered successfully\",\n  \"data\": {\n    \"user\": {\n      \"id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"name\": \"Rishi Ranjana\",\n      \"email\": \"rishi@mail.com\",\n      \"role\": \"user\",\n      \"createdAt\": \"2026-02-20T10:00:00.000Z\",\n      \"updatedAt\": \"2026-02-20T10:00:00.000Z\"\n    }\n  }\n}"
+                        },
+                        {
+                            "name": "400 Email Already Exists",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 400,\n  \"message\": \"User with this email already exists\",\n  \"errors\": []\n}"
+                        },
+                        {
+                            "name": "400 Validation Failed",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 400,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    { \"field\": \"email\", \"message\": \"Invalid email\", \"code\": \"invalid_string\" },\n    { \"field\": \"password\", \"message\": \"Password must be at least 8 characters\", \"code\": \"too_small\" }\n  ]\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Signin",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{apiUrl}}/auth/signin",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"rishi@mail.com\",\n  \"password\": \"12345678\"\n}"
+                        },
+                        "description": "Login with email and password.\n\nOn success sets `accessToken` and `refreshToken` as HttpOnly cookies."
+                    },
+                    "response": [
+                        {
+                            "name": "200 OK",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"user\": {\n      \"id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"name\": \"Rishi Ranjana\",\n      \"email\": \"rishi@mail.com\",\n      \"role\": \"user\",\n      \"createdAt\": \"2026-02-20T10:00:00.000Z\",\n      \"updatedAt\": \"2026-02-20T10:00:00.000Z\"\n    }\n  }\n}"
+                        },
+                        {
+                            "name": "401 Wrong Credentials",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 401,\n  \"message\": \"Invalid email or password\",\n  \"errors\": []\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Refresh Token",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{apiUrl}}/auth/refresh-token",
+                        "description": "Get a new `accessToken` using the `refreshToken` cookie.\n\nNo request body needed — reads cookie automatically."
+                    },
+                    "response": [
+                        {
+                            "name": "200 OK",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Token refreshed successfully\",\n  \"data\": null\n}"
+                        },
+                        {
+                            "name": "401 Missing or Expired Token",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 401,\n  \"message\": \"Invalid or expired refresh token\",\n  \"errors\": []\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Signout",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{apiUrl}}/auth/signout",
+                        "description": "Logout the current user.\n\nClears `accessToken` and `refreshToken` cookies."
+                    },
+                    "response": [
+                        {
+                            "name": "200 OK",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Logged out successfully\",\n  \"data\": null\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Reports",
+            "description": "All routes require `accessToken` cookie (login first).",
+            "item": [
+                {
+                    "name": "Submit Report",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{apiUrl}}/reports",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"reportText\": \"There is a large pothole on the main road near sector 5 which is causing accidents and damaging vehicles.\",\n  \"location\": {\n    \"lat\": 28.6139,\n    \"lng\": 77.2090,\n    \"address\": \"Sector 5, Rohini, New Delhi, Delhi 110085\"\n  }\n}"
+                        },
+                        "description": "Submit a new safety/hazard report.\n\n**Required:**\n- `reportText` — min 10, max 1000 characters\n- `location.lat` — number between -90 and 90\n- `location.lng` — number between -180 and 180  \n- `location.address` — string, min 3 chars\n\n**How it works:**\n1. Text is sent to Groq AI for classification\n2. AI returns `key` (category), `severity`, and `confidence`\n3. If `confidence < 0.55` → `needsReview: true`, status set to `review`\n4. Otherwise status is `pending`\n\n**Requires:** `accessToken` cookie"
+                    },
+                    "response": [
+                        {
+                            "name": "201 Created",
+                            "status": "Created",
+                            "code": 201,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": true,\n  \"statusCode\": 201,\n  \"message\": \"Report submitted successfully\",\n  \"data\": {\n    \"report\": {\n      \"_id\": \"65f1a2b3c4d5e6f7a8b9c0d2\",\n      \"submittedBy\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"reportText\": \"There is a large pothole on the main road near sector 5 which is causing accidents and damaging vehicles.\",\n      \"category\": {\n        \"id\": 101,\n        \"key\": \"road_damage\",\n        \"type\": \"hazard\"\n      },\n      \"severity\": \"medium\",\n      \"confidence\": 0.87,\n      \"needsReview\": false,\n      \"location\": {\n        \"lat\": 28.6139,\n        \"lng\": 77.209,\n        \"address\": \"Sector 5, Rohini, New Delhi, Delhi 110085\"\n      },\n      \"status\": \"pending\",\n      \"clarificationAttempted\": false,\n      \"createdAt\": \"2026-02-20T10:05:00.000Z\",\n      \"updatedAt\": \"2026-02-20T10:05:00.000Z\"\n    }\n  }\n}"
+                        },
+                        {
+                            "name": "201 Created - Low Confidence (needsReview)",
+                            "status": "Created",
+                            "code": 201,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": true,\n  \"statusCode\": 201,\n  \"message\": \"Report submitted successfully\",\n  \"data\": {\n    \"report\": {\n      \"_id\": \"65f1a2b3c4d5e6f7a8b9c0d3\",\n      \"submittedBy\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"reportText\": \"Something weird is happening near the park.\",\n      \"category\": {\n        \"id\": 105,\n        \"key\": \"suspicious_activity\",\n        \"type\": \"violation\"\n      },\n      \"severity\": \"low\",\n      \"confidence\": 0.42,\n      \"needsReview\": true,\n      \"status\": \"review\",\n      \"clarificationAttempted\": false,\n      \"createdAt\": \"2026-02-20T10:06:00.000Z\",\n      \"updatedAt\": \"2026-02-20T10:06:00.000Z\"\n    }\n  }\n}"
+                        },
+                        {
+                            "name": "400 Validation Failed",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 400,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    { \"field\": \"reportText\", \"message\": \"Please provide more details about the issue\", \"code\": \"too_small\" },\n    { \"field\": \"location.lat\", \"message\": \"Invalid location detected\", \"code\": \"custom\" }\n  ]\n}"
+                        },
+                        {
+                            "name": "401 Not Authenticated",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 401,\n  \"message\": \"Authentication token missing\",\n  \"errors\": []\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get My Reports",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{apiUrl}}/reports/me",
+                        "description": "Fetch all reports submitted by the currently logged-in user.\n\nReports are sorted by newest first.\n\n**Requires:** `accessToken` cookie"
+                    },
+                    "response": [
+                        {
+                            "name": "200 OK",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Reports fetched successfully\",\n  \"data\": {\n    \"reports\": [\n      {\n        \"_id\": \"65f1a2b3c4d5e6f7a8b9c0d2\",\n        \"submittedBy\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n        \"reportText\": \"There is a large pothole on the main road near sector 5.\",\n        \"category\": {\n          \"id\": 101,\n          \"key\": \"road_damage\",\n          \"type\": \"hazard\"\n        },\n        \"severity\": \"medium\",\n        \"confidence\": 0.87,\n        \"needsReview\": false,\n        \"location\": {\n          \"lat\": 28.6139,\n          \"lng\": 77.209,\n          \"address\": \"Sector 5, Rohini, New Delhi\"\n        },\n        \"status\": \"pending\",\n        \"clarificationAttempted\": false,\n        \"createdAt\": \"2026-02-20T10:05:00.000Z\",\n        \"updatedAt\": \"2026-02-20T10:05:00.000Z\"\n      }\n    ]\n  }\n}"
+                        },
+                        {
+                            "name": "200 OK - No Reports",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Reports fetched successfully\",\n  \"data\": {\n    \"reports\": []\n  }\n}"
+                        },
+                        {
+                            "name": "401 Not Authenticated",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 401,\n  \"message\": \"Authentication token missing\",\n  \"errors\": []\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Report by ID",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{apiUrl}}/reports/65f1a2b3c4d5e6f7a8b9c0d2",
+                        "description": "Fetch a single report by its MongoDB ObjectId.\n\nOnly returns the report if it belongs to the logged-in user.\n\n**Requires:** `accessToken` cookie"
+                    },
+                    "response": [
+                        {
+                            "name": "200 OK",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Report fetched successfully\",\n  \"data\": {\n    \"report\": {\n      \"_id\": \"65f1a2b3c4d5e6f7a8b9c0d2\",\n      \"submittedBy\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"reportText\": \"There is a large pothole on the main road near sector 5.\",\n      \"category\": {\n        \"id\": 101,\n        \"key\": \"road_damage\",\n        \"type\": \"hazard\"\n      },\n      \"severity\": \"medium\",\n      \"confidence\": 0.87,\n      \"needsReview\": false,\n      \"location\": {\n        \"lat\": 28.6139,\n        \"lng\": 77.209,\n        \"address\": \"Sector 5, Rohini, New Delhi\"\n      },\n      \"status\": \"pending\",\n      \"clarificationAttempted\": false,\n      \"createdAt\": \"2026-02-20T10:05:00.000Z\",\n      \"updatedAt\": \"2026-02-20T10:05:00.000Z\"\n    }\n  }\n}"
+                        },
+                        {
+                            "name": "400 Invalid ObjectId",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 400,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    { \"field\": \"id\", \"message\": \"Invalid report ID\", \"code\": \"invalid_string\" }\n  ]\n}"
+                        },
+                        {
+                            "name": "404 Not Found",
+                            "status": "Not Found",
+                            "code": 404,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 404,\n  \"message\": \"Report not found\",\n  \"errors\": []\n}"
+                        },
+                        {
+                            "name": "401 Not Authenticated",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 401,\n  \"message\": \"Authentication token missing\",\n  \"errors\": []\n}"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
