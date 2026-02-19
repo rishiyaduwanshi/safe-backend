@@ -1,10 +1,10 @@
 import { AppError } from '@/utils/appError';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { Config } from '@/types/config.types';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import type { Config } from '@/types/config.types';
 import { HttpStatus } from '@/types/common.types';
-import { Options as RateLimitOptions } from 'express-rate-limit';
+import type { Options as RateLimitOptions } from 'express-rate-limit';
 import { validateEnv } from '@/validations';
 
 const __filename = fileURLToPath(import.meta.url);
