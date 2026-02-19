@@ -11,7 +11,7 @@ import {
   registerSchema,
   loginSchema,
   refreshTokenSchema,
-} from '@/validators';
+} from '@/validations';
 
 const router: Router = Router();
 

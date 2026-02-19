@@ -5,7 +5,7 @@ import { dirname, join } from 'path';
 import { Config } from '@/types/config.types';
 import { HttpStatus } from '@/types/common.types';
 import { Options as RateLimitOptions } from 'express-rate-limit';
-import { validateEnv } from '@/validators';
+import { validateEnv } from '@/validations';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

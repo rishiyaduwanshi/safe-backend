@@ -7,7 +7,7 @@ import jwt, { JsonWebTokenError, SignOptions } from 'jsonwebtoken';
 import { config } from '@config/index';
 import mongoose from 'mongoose';
 import { HttpStatus, TokenPair, JwtPayload as CustomJwtPayload } from '@/types/common.types';
-import { RegisterInput, LoginInput } from '@/validators';
+import { RegisterInput, LoginInput } from '@/validations';
 
 // Response data interfaces
 interface UserResponseData {
