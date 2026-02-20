@@ -9,7 +9,8 @@
     "dev:pro": "bun run --watch --env-file=.env server.ts",
     "start": "bun run server.ts",
     "pro": "bun run dist/server.js",
-    "build": "bun build server.ts --outdir ./dist --target bun"
+    "build": "bun build server.ts --outdir ./dist --target bun",
+    "seed:mod": "bun run --env-file=.env.dev src/seeds/mod.seed.js"
   },
   "keywords": [],
   "author": "",

@@ -7,7 +7,7 @@ const permissionsSchema = z
 
 export const createModeratorSchema = z.object({
     name: z.string().min(2).max(50).trim(),
-    email: z.string().email().toLowerCase().trim(),
+    email: z.email().toLowerCase().trim(),
     password: z
         .string()
         .min(8, 'Password must be at least 8 characters')
@@ -24,3 +24,12 @@ export const updateModeratorPermissionsSchema = z.object({
 
 export type CreateModeratorInput = z.infer<typeof createModeratorSchema>;
 export type UpdateModeratorPermissionsInput = z.infer<typeof updateModeratorPermissionsSchema>;
+
+// ─── Moderator Login ─────────────────────────────────────────────────────────
+
+export const moderatorLoginSchema = z.object({
+    email: z.email().toLowerCase().trim(),
+    password: z.string().min(1, 'Password is required'),
+});
+
+export type ModeratorLoginInput = z.infer<typeof moderatorLoginSchema>;

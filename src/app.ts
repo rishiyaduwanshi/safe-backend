@@ -27,6 +27,7 @@ import reportRoutes from './routes/report.routes';
 import adminRoutes from './routes/admin.routes';
 import licenseRoutes from './routes/license.routes';
 import profileRoutes from './routes/profile.routes';
+import moderatorRoutes from './routes/moderator.routes';
 
 // API routes
 const api = express.Router();
@@ -37,6 +38,7 @@ api.use('/reports', reportRoutes);
 api.use('/admin', adminRoutes);
 api.use('/license', licenseRoutes);
 api.use('/profile', profileRoutes);
+api.use('/moderator', moderatorRoutes);
 
 app.use(`/api/v${config.VERSION.split('.')[0]}`, api);
 
