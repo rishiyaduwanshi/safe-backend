@@ -47,6 +47,10 @@ export const config: Readonly<Config> = Object.freeze({
   // Groq AI
   GROQ_API_KEY: env.GROQ_API_KEY,
 
+  // Admin Bootstrap
+  ADMIN_EMAIL: env.ADMIN_EMAIL,
+  ADMIN_PASSWORD: env.ADMIN_PASSWORD,
+
   // CORS Config
   ALLOWED_ORIGINS: Object.freeze(env.ALLOWED_ORIGINS),
 

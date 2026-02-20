@@ -52,6 +52,10 @@ const envSchema = z.object({
     .regex(/^\d+$/, 'PER_IP_RATE_LIMIT_MAX must be a number')
     .default('10')
     .transform(Number),
+
+  // Admin Bootstrap Credentials (used only for seeding the first admin on startup)
+  ADMIN_EMAIL: z.string().email('ADMIN_EMAIL must be a valid email'),
+  ADMIN_PASSWORD: z.string().min(8, 'ADMIN_PASSWORD must be at least 8 characters'),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

@@ -10,6 +10,18 @@ export interface Category {
     hing: string;
   };
   severity: Severity;
+  /**
+   * CSS (Citizen Safety Score) base weight for the REPORTER.
+   * Always positive — represents the reward for a correct report.
+   *
+   * On review result:
+   *   approved / confirmed  →  reporter CSS  += weight
+   *   rejected (false report) →  reporter CSS  -= weight * 3   (3x penalty to prevent misuse)
+   *
+   * Note: offender CSS deduction for violations is handled separately
+   * via the `points` field on the Violation document.
+   */
+  weight: number;
 }
 
 export interface CategoryGroup {
@@ -35,7 +47,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "सड़क पर बना गहरा गड्ढा जो वाहनों को नुकसान पहुंचा सकता है और दुर्घटना का कारण बन सकता है।",
           hing: "Road par bana gehra gadda jo vehicle ko damage kar sakta hai aur accident ka risk badha sakta hai."
         },
-        severity: "medium"
+        severity: "medium",
+        weight: 3,             // +3 CSS for reporting
       },
       {
         id: 150,
@@ -46,7 +59,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "सड़क का टूटा या फटा हुआ हिस्सा जिससे वाहन चलाना असुरक्षित हो जाता है।",
           hing: "Road ka toota ya cracked hissa jisse driving unsafe ho jati hai."
         },
-        severity: "medium"
+        severity: "medium",
+        weight: 3,
       },
       {
         id: 200,
@@ -57,7 +71,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "सड़क पर पानी भर जाना जिससे दृश्यता कम हो जाती है और दुर्घटना का खतरा बढ़ता है।",
           hing: "Road par paani jama ho jana jisse visibility kam ho jati hai aur accident ka risk badhta hai."
         },
-        severity: "high"
+        severity: "high",
+        weight: 5,
       },
       {
         id: 250,
@@ -68,7 +83,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "सड़क पर गिरा हुआ पेड़ जो ट्रैफिक को रोक देता है और गंभीर खतरा पैदा करता है।",
           hing: "Road par gira hua ped jo traffic block kar deta hai aur serious danger create karta hai."
         },
-        severity: "critical"
+        severity: "critical",
+        weight: 8,
       },
       {
         id: 300,
@@ -79,7 +95,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "कोई बड़ी रुकावट जो वाहनों की आवाजाही पूरी तरह रोक दे।",
           hing: "Koi badi rukawat jo vehicles ko completely block kar de."
         },
-        severity: "high"
+        severity: "high",
+        weight: 5,
       },
       {
         id: 350,
@@ -90,7 +107,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "सड़क पर पड़ा कचरा, पत्थर या टूटे हुए वाहन के हिस्से।",
           hing: "Road par pada kachra, patthar ya vehicle ke toote parts."
         },
-        severity: "medium"
+        severity: "medium",
+        weight: 3,
       },
       {
         id: 400,
@@ -101,7 +119,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "बिना ढक्कन का मैनहोल जो जानलेवा खतरा बन सकता है।",
           hing: "Bina dhakkan ka manhole jo turant jaanleva ho sakta hai."
         },
-        severity: "critical"
+        severity: "critical",
+        weight: 8,
       },
       {
         id: 450,
@@ -112,7 +131,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "रात में स्ट्रीटलाइट का काम न करना जिससे दृश्यता कम हो जाती है।",
           hing: "Raat me streetlight ka kaam na karna jisse visibility kam ho jati hai."
         },
-        severity: "low"
+        severity: "low",
+        weight: 2,
       },
       {
         id: 500,
@@ -123,7 +143,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "ट्रैफिक सिग्नल का सही से काम न करना जिससे दुर्घटना का खतरा बढ़ता है।",
           hing: "Traffic signal ka kaam na karna jisse accident ka risk badhta hai."
         },
-        severity: "high"
+        severity: "high",
+        weight: 5,
       }
     ]
   },
@@ -139,7 +160,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "बिना हेलमेट दोपहिया वाहन चलाना।",
           hing: "Helmet bina two-wheeler chalana."
         },
-        severity: "medium"
+        severity: "medium",
+        weight: 5,
       },
       {
         id: 1050,
@@ -150,7 +172,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "निर्धारित गति सीमा से अधिक तेज वाहन चलाना।",
           hing: "Speed limit se zyada fast gaadi chalana."
         },
-        severity: "high"
+        severity: "high",
+        weight: 10,
       },
       {
         id: 1100,
@@ -161,7 +184,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "ट्रैफिक की दिशा के विपरीत वाहन चलाना।",
           hing: "Traffic ke opposite direction me gaadi chalana."
         },
-        severity: "critical"
+        severity: "critical",
+        weight: 20,
       },
       {
         id: 1200,
@@ -172,7 +196,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "शराब या नशे के प्रभाव में वाहन चलाना।",
           hing: "Sharab ya drugs ke effect me gaadi chalana."
         },
-        severity: "critical"
+        severity: "critical",
+        weight: 20,
       },
       {
         id: 1300,
@@ -183,7 +208,8 @@ export const categories: readonly CategoryGroup[] = [
           hin: "नो-पार्किंग क्षेत्र में वाहन खड़ा करना।",
           hing: "No-parking zone me gaadi khadi karna."
         },
-        severity: "medium"
+        severity: "medium",
+        weight: 5,
       }
     ]
   }

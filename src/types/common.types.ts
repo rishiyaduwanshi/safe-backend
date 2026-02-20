@@ -80,12 +80,31 @@ export interface AuthenticatedUser {
   role: UserRole;
 }
 
+// Request with Moderator
+export interface AuthenticatedModerator {
+  id: string;
+  name: string;
+  email: string;
+  permissions: string[];
+}
+
 // JWT Payload
 export interface JwtPayload {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  iat?: number;
+  exp?: number;
+}
+
+// Moderator JWT Payload
+export interface ModeratorJwtPayload {
+  id: string;
+  name: string;
+  email: string;
+  permissions: string[];
+  actorType: 'moderator';   // discriminator so moderator tokens can't be used as user tokens
   iat?: number;
   exp?: number;
 }

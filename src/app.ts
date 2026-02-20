@@ -24,6 +24,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 import indexRoutes from './routes/index';
 import authRoutes from './routes/auth.routes';
 import reportRoutes from './routes/report.routes';
+import adminRoutes from './routes/admin.routes';
 
 // API routes
 const api = express.Router();
@@ -31,6 +32,7 @@ const api = express.Router();
 app.use('/', indexRoutes);
 api.use('/auth', authRoutes);
 api.use('/reports', reportRoutes);
+api.use('/admin', adminRoutes);
 
 app.use(`/api/v${config.VERSION.split('.')[0]}`, api);
 

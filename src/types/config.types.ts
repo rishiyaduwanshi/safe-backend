@@ -33,4 +33,6 @@ export interface RateLimitConfig {
 export interface Config extends AppConfig, JwtConfig, RateLimitConfig {
   readonly ALLOWED_ORIGINS: readonly string[];
   readonly GROQ_API_KEY: string;
+  readonly ADMIN_EMAIL: string;
+  readonly ADMIN_PASSWORD: string;
 }
