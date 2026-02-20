@@ -4,7 +4,7 @@ import {
     getMyReports,
     getReportById,
 } from '@/controllers/report.controller';
-import { authenticate } from '@/middlewares/auth.mid';
+import { authenticate, requireProfile } from '@/middlewares/auth.mid';
 import { validateBody, validateParams } from '@/middlewares/validate.mid';
 import { reportSchema, reportParamsSchema } from '@/validations';
 
@@ -13,9 +13,9 @@ const router: Router = Router();
 /**
  * @route   POST /api/v1/reports
  * @desc    Submit a new safety report
- * @access  Private (authenticated)
+ * @access  Private — user must have completed DL verification (profileId set)
  */
-router.post('/', authenticate, validateBody(reportSchema), submitReport);
+router.post('/', authenticate, requireProfile, validateBody(reportSchema), submitReport);
 
 /**
  * @route   GET /api/v1/reports/me

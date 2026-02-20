@@ -23,9 +23,15 @@ const passwordSchema = z.string()
 // Name validation
 const nameSchema = z.string()
   .min(2, 'Name must be at least 2 characters')
-  .max(50, 'Name must not exceed 50 characters')
-  .trim()
-  .optional();
+  .max(100, 'Name must not exceed 100 characters')
+  .trim().transform((v) => {
+    v
+      .toLowerCase()
+      .split(" ")
+      .filter(Boolean)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  })
 
 // Register Schema
 export const registerSchema = z.object({

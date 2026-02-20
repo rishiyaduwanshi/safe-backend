@@ -73,10 +73,7 @@ export const register = async (
       throw new BadRequestError('User with this email already exists');
     }
 
-    // Use email as default name if name is not provided
-    const userName = name || email.split('@')[0];
-
-    const user = await UserModel.create({ email, password, name: `${userName?.charAt(0).toUpperCase()}${userName?.slice(1)}` });
+    const user = await UserModel.create({ email, password, name });
     const tokens = generateTokens(user);
     await UserModel.updateRefreshToken(user._id, tokens.refreshToken);
 

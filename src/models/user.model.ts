@@ -1,6 +1,7 @@
 import mongoose, { Document, Model, Schema, CallbackError } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { UserRole } from '@/types/common.types';
+import type { IProfile } from './profile.model';
 
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
@@ -8,6 +9,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: UserRole;
+  profileId: mongoose.Types.ObjectId | IProfile | null; // set after DL verification
   refreshToken: string | null;
   comparePassword(candidatePassword: string): Promise<boolean>;
   createdAt: Date;
@@ -48,6 +50,11 @@ const userSchema = new Schema<IUser, IUserModel>(
       type: String,
       enum: Object.values(UserRole),
       default: UserRole.USER,
+    },
+    profileId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Profile',
+      default: null,
     },
     refreshToken: {
       type: String,

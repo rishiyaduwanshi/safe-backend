@@ -4,6 +4,7 @@ import jwt, { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import { JwtPayload, ModeratorJwtPayload, UserRole } from '@/types/common.types';
 import { ForbiddenError, UnauthorizedError } from '@/utils/appError';
 import { Permission } from '@/data/permissions';
+import Profile from '@/models/profile.model';
 
 /**
  * Middleware to authenticate JWT tokens from cookies
@@ -57,6 +58,35 @@ export const requireAdmin = (
 
     if (req.user.role !== UserRole.ADMIN) {
       throw new ForbiddenError('Admin access required');
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Middleware to check if the authenticated user has set up their profile
+ * (i.e. completed the DL verification step).
+ * Must be used after authenticate.
+ */
+export const requireProfile = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
+    const profile = await Profile.findOne({ userId: req.user.id }).lean();
+    if (!profile) {
+      next(new ForbiddenError(
+        'Profile setup required. Please verify your Driving License on your Profile page before submitting a report.'
+      ));
+      return;
     }
 
     next();
