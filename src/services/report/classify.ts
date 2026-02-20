@@ -21,7 +21,7 @@ export async function classifyWithAI(text: string) {
   reportLogger.info(`Classifying report: ${text}`);
 
   const response = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
+    model: "openai/gpt-oss-20b",
     messages: [
       {
         role: "system",
@@ -61,10 +61,10 @@ critical → immediate life threat
             },
             confidence: { type: "number" },
           },
-          required: ["key", "severity"],
+          required: ["key", "severity", "confidence"],
           additionalProperties: false,
         },
-        strict: false,
+        strict: true,
       },
     },
   });

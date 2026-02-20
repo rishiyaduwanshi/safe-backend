@@ -76,7 +76,7 @@ export const register = async (
     // Use email as default name if name is not provided
     const userName = name || email.split('@')[0];
 
-    const user = await UserModel.create({ email, password, name: userName });
+    const user = await UserModel.create({ email, password, name: `${userName?.charAt(0).toUpperCase()}${userName?.slice(1)}` });
     const tokens = generateTokens(user);
     await UserModel.updateRefreshToken(user._id, tokens.refreshToken);
 
