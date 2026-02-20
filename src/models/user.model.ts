@@ -16,7 +16,7 @@ export interface IUser extends Document {
 
 interface IUserModel extends Model<IUser> {
   updateRefreshToken(
-    userId: mongoose.Types.ObjectId, 
+    userId: mongoose.Types.ObjectId,
     refreshToken: string | null
   ): Promise<IUser | null>;
 }
@@ -41,7 +41,7 @@ const userSchema = new Schema<IUser, IUserModel>(
     password: {
       type: String,
       required: [true, 'Password is required'],
-      minlength: [6, 'Password must be at least 6 characters long'],
+      minlength: [8, 'Password must be at least 8 characters long'],
       select: false, // Don't return password in queries by default
     },
     role: {
@@ -86,8 +86,8 @@ userSchema.statics.updateRefreshToken = async function (
   refreshToken: string | null
 ): Promise<IUser | null> {
   return this.findByIdAndUpdate(
-    userId, 
-    { refreshToken }, 
+    userId,
+    { refreshToken },
     { new: true }
   ).select('+refreshToken');
 };

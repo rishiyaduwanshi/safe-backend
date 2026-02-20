@@ -75,12 +75,17 @@ export interface PaginatedResponse<T> extends ApiResponse<T> {
 // Request with User
 export interface AuthenticatedUser {
   id: string;
+  name: string;
+  email: string;
   role: UserRole;
 }
 
 // JWT Payload
 export interface JwtPayload {
   id: string;
+  name: string;
+  email: string;
+  role: UserRole;
   iat?: number;
   exp?: number;
 }

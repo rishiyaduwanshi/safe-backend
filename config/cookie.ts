@@ -14,6 +14,7 @@ const COOKIE_DURATION = {
 interface TokenCookieOptions {
   readonly accessToken: CookieOptions;
   readonly refreshToken: CookieOptions;
+  readonly userInfo: CookieOptions;
 }
 
 export const cookieOptions: TokenCookieOptions = {
@@ -31,4 +32,14 @@ export const cookieOptions: TokenCookieOptions = {
     maxAge: isProduction ? COOKIE_DURATION.REFRESH_TOKEN_PROD : COOKIE_DURATION.REFRESH_TOKEN_DEV,
     path: '/',
   } as CookieOptions,
+  // Non-httpOnly: frontend JS can read this to restore user state on refresh
+  // Contains no sensitive data — auth is still guarded by httpOnly accessToken
+  userInfo: {
+    httpOnly: false,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    maxAge: isProduction ? COOKIE_DURATION.REFRESH_TOKEN_PROD : COOKIE_DURATION.REFRESH_TOKEN_DEV,
+    path: '/',
+  } as CookieOptions,
 };
+

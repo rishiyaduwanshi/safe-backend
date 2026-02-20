@@ -3,11 +3,12 @@ import { BadRequestError, UnauthorizedError } from '@/utils/appError';
 import appResponse from '@/utils/appResponse';
 import UserModel, { IUser } from '@/models/user.model';
 import setTokenCookies from '@/utils/setTokenCookies';
+import { cookieOptions } from '@config/cookie';
 import jwt, { JsonWebTokenError, SignOptions } from 'jsonwebtoken';
 import { config } from '@config/index';
 import mongoose from 'mongoose';
-import { HttpStatus, TokenPair, JwtPayload as CustomJwtPayload } from '@/types/common.types';
 import { RegisterInput, LoginInput } from '@/validations';
+import { HttpStatus, TokenPair, JwtPayload as CustomJwtPayload, UserRole } from '@/types/common.types';
 
 // Response data interfaces
 interface UserResponseData {
@@ -15,8 +16,8 @@ interface UserResponseData {
   name: string;
   email: string;
   role: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 interface AuthResponseData {
@@ -34,8 +35,13 @@ const toUserResponse = (user: IUser): UserResponseData => ({
 });
 
 // Generate JWT tokens
-const generateTokens = (userId: mongoose.Types.ObjectId): TokenPair => {
-  const payload: CustomJwtPayload = { id: userId.toString() };
+const generateTokens = (user: IUser): TokenPair => {
+  const payload: CustomJwtPayload = {
+    id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    role: user.role as UserRole,
+  };
 
   const accessToken = jwt.sign(
     payload,
@@ -71,11 +77,11 @@ export const register = async (
     const userName = name || email.split('@')[0];
 
     const user = await UserModel.create({ email, password, name: userName });
-    const tokens = generateTokens(user._id);
+    const tokens = generateTokens(user);
     await UserModel.updateRefreshToken(user._id, tokens.refreshToken);
 
     const userResponse = toUserResponse(user);
-    setTokenCookies(res, tokens);
+    setTokenCookies(res, tokens, userResponse);
 
     appResponse<AuthResponseData>(res, {
       statusCode: HttpStatus.CREATED,
@@ -103,11 +109,11 @@ export const login = async (
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    const tokens = generateTokens(user._id);
+    const tokens = generateTokens(user);
     await UserModel.updateRefreshToken(user._id, tokens.refreshToken);
 
     const userResponse = toUserResponse(user);
-    setTokenCookies(res, tokens);
+    setTokenCookies(res, tokens, userResponse);
 
     appResponse<AuthResponseData>(res, {
       message: 'Signin successful',
@@ -138,7 +144,7 @@ export const refreshToken = async (
       throw new UnauthorizedError('Invalid refresh token');
     }
 
-    const tokens = generateTokens(user._id);
+    const tokens = generateTokens(user);
     await UserModel.updateRefreshToken(user._id, tokens.refreshToken);
 
     setTokenCookies(res, tokens);
@@ -152,6 +158,24 @@ export const refreshToken = async (
     } else {
       next(error);
     }
+  }
+};
+
+export const me = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // req.user is fully populated by authenticate middleware from JWT
+    const { id, name, email, role } = req.user!;
+
+    appResponse<AuthResponseData>(res, {
+      message: 'User fetched successfully',
+      data: { user: { id, name, email, role } },
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -171,8 +195,13 @@ export const logout = async (
       );
     }
 
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    // Must pass matching path/secure/sameSite so the browser removes the correct cookie
+    const { maxAge: _a, httpOnly: _b, ...clearOpts } = cookieOptions.accessToken;
+    const { maxAge: _c, httpOnly: _d, ...clearRefreshOpts } = cookieOptions.refreshToken;
+    const { maxAge: _e, ...clearUserInfoOpts } = cookieOptions.userInfo;
+    res.clearCookie('accessToken', clearOpts);
+    res.clearCookie('refreshToken', clearRefreshOpts);
+    res.clearCookie('userInfo', clearUserInfoOpts);
 
     appResponse(res, {
       message: 'Logged out successfully',
