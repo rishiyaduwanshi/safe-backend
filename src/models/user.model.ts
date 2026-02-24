@@ -11,6 +11,7 @@ export interface IUser extends Document {
   role: UserRole;
   profileId: mongoose.Types.ObjectId | IProfile | null; // set after DL verification
   refreshToken: string | null;
+  css: number; // Citizen Safety Score — stored, updated on approve/reject
   comparePassword(candidatePassword: string): Promise<boolean>;
   createdAt: Date;
   updatedAt: Date;
@@ -60,6 +61,12 @@ const userSchema = new Schema<IUser, IUserModel>(
       type: String,
       default: null,
       select: false, // Don't return refresh token in queries by default
+    },
+    css: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 1000,
     },
   },
   {

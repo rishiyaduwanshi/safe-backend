@@ -3,6 +3,7 @@ import {
     submitReport,
     getMyReports,
     getReportById,
+    getMyStats,
 } from '@/controllers/report.controller';
 import { authenticate, requireProfile } from '@/middlewares/auth.mid';
 import { validateBody, validateParams } from '@/middlewares/validate.mid';
@@ -23,6 +24,13 @@ router.post('/', authenticate, requireProfile, validateBody(reportSchema), submi
  * @access  Private (authenticated)
  */
 router.get('/me', authenticate, getMyReports);
+
+/**
+ * @route   GET /api/v1/reports/stats
+ * @desc    Get CSS (Citizen Safety Score) + report counts for logged-in user
+ * @access  Private (authenticated)
+ */
+router.get('/stats', authenticate, getMyStats);
 
 /**
  * @route   GET /api/v1/reports/:id

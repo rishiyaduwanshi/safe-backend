@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import { NotFoundError } from '@/utils/appError';
 import appResponse from '@/utils/appResponse';
 import { HttpStatus } from '@/types/common.types';
 import { ReportModel } from '@/models/report.model';
+import UserModel from '@/models/user.model';
 import { processReport } from '@/services/report';
 import { ReportRequest } from '@/validations';
 
@@ -94,6 +96,87 @@ export const getReportById = async (
     appResponse(res, {
       message: 'Report fetched successfully',
       data: { report },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── Get report stats + stored CSS for the logged-in user ───────────────────
+//
+// CSS is stored on the User document and updated by the moderator on
+// approve / reject — it is NEVER recomputed here.
+
+export const getMyStats = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const now = new Date();
+
+    // Read stored CSS directly from the User document
+    const user = await UserModel.findById(userId).select('css');
+    const css = user?.css ?? 0;
+
+    // Status counts + month deltas — all in one aggregation
+    const [counts, monthly] = await Promise.all([
+      ReportModel.aggregate<{ _id: string; count: number }>([
+        { $match: { submittedBy: new mongoose.Types.ObjectId(userId) } },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+      // Last 6 months report counts
+      ReportModel.aggregate<{ month: number; year: number; count: number }>([
+        {
+          $match: {
+            submittedBy: new mongoose.Types.ObjectId(userId),
+            createdAt: { $gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) },
+          },
+        },
+        {
+          $group: {
+            _id: { month: { $month: '$createdAt' }, year: { $year: '$createdAt' } },
+            count: { $sum: 1 },
+          },
+        },
+        { $project: { month: '$_id.month', year: '$_id.year', count: 1, _id: 0 } },
+      ]),
+    ]);
+
+    // Build counts map
+    const countMap = Object.fromEntries(counts.map((c) => [c._id, c.count]));
+    const total = Object.values(countMap).reduce((a, b) => a + b, 0);
+
+    // Build 6-month breakdown with zero-fill
+    const monthlyBreakdown = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      const m = d.getMonth() + 1; // MongoDB $month is 1-based
+      const y = d.getFullYear();
+      const found = monthly.find((r) => r.month === m && r.year === y);
+      return {
+        month: d.toLocaleString('default', { month: 'short' }),
+        count: found?.count ?? 0,
+      };
+    });
+
+    const thisMonthCount = monthlyBreakdown.at(-1)?.count ?? 0;
+    const lastMonthCount = monthlyBreakdown.at(-2)?.count ?? 0;
+
+    appResponse(res, {
+      message: 'Stats fetched successfully',
+      data: {
+        css,
+        maxCss: 1000,
+        improvementFromLastMonth: thisMonthCount - lastMonthCount,
+        counts: {
+          total,
+          approved: countMap['approved'] ?? 0,
+          rejected: countMap['rejected'] ?? 0,
+          pending: (countMap['pending'] ?? 0) + (countMap['review'] ?? 0),
+        },
+        monthlyBreakdown,
+      },
     });
   } catch (error) {
     next(error);

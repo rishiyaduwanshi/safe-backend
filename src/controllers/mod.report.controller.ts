@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { ReportModel } from '@/models/report.model';
+import UserModel from '@/models/user.model';
 import appResponse from '@/utils/appResponse';
 import { NotFoundError } from '@/utils/appError';
+import { flatCategory } from '@/data/category';
 
 // Allowed filters
 type ReportStatus = 'pending' | 'review' | 'approved' | 'rejected';
@@ -96,9 +98,22 @@ export const approveReport = async (
         const report = await ReportModel.findById(req.params.id);
         if (!report) throw new NotFoundError('Report not found');
 
+        // Guard: only act on reports not yet decided
+        if (report.status === 'approved' || report.status === 'rejected') {
+            appResponse(res, { message: 'Report already reviewed', data: { report } });
+            return;
+        }
+
         report.status = 'approved' as ReportStatus;
         report.needsReview = false;
         await report.save();
+
+        // ── Update reporter's stored CSS ─────────────────────────────────
+        const cat = flatCategory.find((c) => c.id === report.category?.id);
+        const weight = (cat?.weight ?? 3) * 10; // ×10 → meaningful on 0-1000 scale
+        await UserModel.findByIdAndUpdate(report.submittedBy, [
+            { $set: { css: { $min: [1000, { $max: [0, { $add: ['$css', weight] }] }] } } },
+        ]);
 
         appResponse(res, {
             message: 'Report approved',
@@ -121,9 +136,22 @@ export const rejectReport = async (
         const report = await ReportModel.findById(req.params.id);
         if (!report) throw new NotFoundError('Report not found');
 
+        // Guard: only act on reports not yet decided
+        if (report.status === 'approved' || report.status === 'rejected') {
+            appResponse(res, { message: 'Report already reviewed', data: { report } });
+            return;
+        }
+
         report.status = 'rejected' as ReportStatus;
         report.needsReview = false;
         await report.save();
+
+        // ── Penalise reporter's stored CSS (3× weight for false report) ──────────────
+        const cat = flatCategory.find((c) => c.id === report.category?.id);
+        const weight = (cat?.weight ?? 3) * 10; // ×10 → meaningful on 0-1000 scale
+        await UserModel.findByIdAndUpdate(report.submittedBy, [
+            { $set: { css: { $min: [1000, { $max: [0, { $subtract: ['$css', weight * 3] }] }] } } },
+        ]);
 
         appResponse(res, {
             message: 'Report rejected',
