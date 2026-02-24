@@ -10,6 +10,7 @@ import globalErrorHandler from '@/middlewares/globalError.mid';
 import { corsOptions } from '@config/cors';
 
 const app: Express = express();
+app.set('trust proxy', true);
 
 // Middleware
 app.use(cors(corsOptions));
