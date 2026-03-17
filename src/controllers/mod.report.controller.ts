@@ -7,6 +7,10 @@ import { flatCategory } from '@/data/category';
 
 // Allowed filters
 type ReportStatus = 'pending' | 'review' | 'approved' | 'rejected';
+type ReportSeverity = 'low' | 'medium' | 'high' | 'critical';
+
+const ALLOWED_STATUSES: readonly ReportStatus[] = ['pending', 'review', 'approved', 'rejected'];
+const ALLOWED_SEVERITIES: readonly ReportSeverity[] = ['low', 'medium', 'high', 'critical'];
 
 // ─── List Reports ────────────────────────────────────────────────────────────
 // GET /api/v1/moderator/reports?status=review&needsReview=true&page=1&limit=20
@@ -27,9 +31,18 @@ export const listReports = async (
 
         // Build filter
         const filter: Record<string, unknown> = {};
-        if (status) filter[status] = status;
-        if (needsReview === 'true') filter[needsReview] = true;
-        if (severity) filter[severity] = severity;
+
+        if (status && ALLOWED_STATUSES.includes(status as ReportStatus)) {
+            filter['status'] = status;
+        }
+
+        if (needsReview === 'true' || needsReview === 'false') {
+            filter['needsReview'] = needsReview === 'true';
+        }
+
+        if (severity && ALLOWED_SEVERITIES.includes(severity as ReportSeverity)) {
+            filter['severity'] = severity;
+        }
 
         const pageNum = Math.max(1, parseInt(page, 10));
         const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
