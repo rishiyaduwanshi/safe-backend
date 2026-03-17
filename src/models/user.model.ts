@@ -1,7 +1,6 @@
 import mongoose, { Document, Model, Schema, CallbackError } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { UserRole } from '@/types/common.types';
-import type { IProfile } from './profile.model';
 
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
@@ -9,9 +8,10 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: UserRole;
-  profileId: mongoose.Types.ObjectId | IProfile | null; // set after DL verification
+  profileId: mongoose.Types.ObjectId | null; // set after DL verification
   refreshToken: string | null;
   css: number; // Citizen Safety Score — stored, updated on approve/reject
+  cssInitialized: boolean; // tracks whether score was initialized by moderation
   comparePassword(candidatePassword: string): Promise<boolean>;
   createdAt: Date;
   updatedAt: Date;
@@ -68,6 +68,10 @@ const userSchema = new Schema<IUser, IUserModel>(
       min: 0,
       max: 1000,
     },
+    cssInitialized: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -88,14 +92,14 @@ userSchema.pre('save', async function (next) {
 });
 
 // Compare password method
-userSchema.methods.comparePassword = async function (
+userSchema.methods['comparePassword'] = async function (
   candidatePassword: string
 ): Promise<boolean> {
-  return await bcrypt.compare(candidatePassword, this.password);
+  return await bcrypt.compare(candidatePassword, this['password']);
 };
 
 // Update refresh token static method
-userSchema.statics.updateRefreshToken = async function (
+userSchema.statics['updateRefreshToken'] = async function (
   userId: mongoose.Types.ObjectId,
   refreshToken: string | null
 ): Promise<IUser | null> {

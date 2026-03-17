@@ -117,8 +117,9 @@ export const getMyStats = async (
     const now = new Date();
 
     // Read stored CSS directly from the User document
-    const user = await UserModel.findById(userId).select('css');
+    const user = await UserModel.findById(userId).select('css cssInitialized');
     const css = user?.css ?? 0;
+    const hasCssHistory = Boolean(user?.cssInitialized || css > 0);
 
     // Status counts + month deltas — all in one aggregation
     const [counts, monthly] = await Promise.all([
@@ -167,6 +168,7 @@ export const getMyStats = async (
       message: 'Stats fetched successfully',
       data: {
         css,
+        hasCssHistory,
         maxCss: 1000,
         improvementFromLastMonth: thisMonthCount - lastMonthCount,
         counts: {
