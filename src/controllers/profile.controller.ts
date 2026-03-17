@@ -12,15 +12,14 @@ import { HttpStatus } from '@/types/common.types';
 // the lookup service changes.
 
 const profileSaveSchema = z.object({
-    name: z.string().min(1).transform((value : string) => {
+    name: z.string().trim().min(1).transform((value: string) => (
         value
-            .trim()
             .toLowerCase()
-            .split(" ")
+            .split(/\s+/)
             .filter(Boolean)
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ");
-    }),
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ')
+    )),
     licenseNumber: z.string().min(1),
     driverId: z.string().min(1),
     phone: z.string().min(1),
@@ -63,7 +62,7 @@ export const saveProfile = async (
         const profile = await Profile.findOneAndUpdate(
             { userId },
             { ...parsed.data, userId },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
+            { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
         );
 
         // Link profile to user if not already linked
