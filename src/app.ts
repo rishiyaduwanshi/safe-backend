@@ -11,6 +11,11 @@ import { corsOptions } from '@config/cors';
 
 const app: Express = express();
 app.set('trust proxy', true);
+if (config.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+} else {
+  app.set('trust proxy', false); 
+}
 
 // Middleware
 app.use(cors(corsOptions));

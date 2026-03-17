@@ -27,9 +27,9 @@ export const listReports = async (
 
         // Build filter
         const filter: Record<string, unknown> = {};
-        if (status) filter.status = status;
-        if (needsReview === 'true') filter.needsReview = true;
-        if (severity) filter.severity = severity;
+        if (status) filter[status] = status;
+        if (needsReview === 'true') filter[needsReview] = true;
+        if (severity) filter[severity] = severity;
 
         const pageNum = Math.max(1, parseInt(page, 10));
         const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));

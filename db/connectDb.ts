@@ -3,6 +3,7 @@ import { config } from '@config/index';
 import { seedAdmin } from './seedAdmin';
 
 const connectDb = async (): Promise<void> => {
+  console.log("[MONGO URI] ", config.MONGO_URI)
   try {
     const connection = await mongoose.connect(config.MONGO_URI);
     console.log('Database connected successfully 🥳 on', connection.connection.host);
