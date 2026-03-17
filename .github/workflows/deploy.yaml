@@ -31,6 +31,15 @@ jobs:
           script: |
             set -e
             cd ~/safeindia
+
+            DEPLOY_KEY="$HOME/.ssh/github_deploy"
+            if [ ! -f "$DEPLOY_KEY" ]; then
+              echo "Missing deploy key file: $DEPLOY_KEY"
+              exit 1
+            fi
+
+            export GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
             git fetch origin main
             git checkout main
             git pull --ff-only origin main
