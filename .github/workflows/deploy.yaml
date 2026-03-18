@@ -17,50 +17,93 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT }}
 
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Validate deploy secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -n "${SERVER_HOST:-}" ] || { echo "Missing SERVER_HOST secret"; exit 1; }
+          [ -n "${SERVER_USER:-}" ] || { echo "Missing SERVER_USER secret"; exit 1; }
 
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script_stop: true
-          command_timeout: 20m
-          script: |
-            set -e
-            cd ~/safeindia
+      - name: Configure SSH key for VPS login
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
 
-            DEPLOY_KEY="$HOME/.ssh/github_deploy"
-            if [ ! -f "$DEPLOY_KEY" ]; then
-              echo "Missing deploy key file: $DEPLOY_KEY"
-              exit 1
-            fi
+          KEY_FILE="$HOME/.ssh/github_deploy"
 
-            export GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          KEY_CONTENT='${{ secrets.SERVER_SSH_KEY }}'
+          if printf '%s' "$KEY_CONTENT" | grep -q '\\n'; then
+            printf '%b' "$KEY_CONTENT" > "$KEY_FILE"
+          else
+            printf '%s\n' "$KEY_CONTENT" > "$KEY_FILE"
+          fi
 
-            git fetch origin main
-            git checkout main
-            git pull --ff-only origin main
+          tr -d '\r' < "$KEY_FILE" > "$KEY_FILE.tmp"
+          mv "$KEY_FILE.tmp" "$KEY_FILE"
 
-            if ! command -v bun >/dev/null 2>&1; then
-              echo "bun is required on server for deploy"
-              exit 1
-            fi
+          chmod 600 "$KEY_FILE"
 
-            bun install --frozen-lockfile
-            bun run build
+          if ! grep -q "BEGIN .*PRIVATE KEY" "$KEY_FILE"; then
+            echo "SERVER_SSH_KEY does not look like a valid private key"
+            exit 1
+          fi
 
-            if command -v pm2 >/dev/null 2>&1; then
-              if pm2 describe safe-backend >/dev/null 2>&1; then
-                pm2 restart safe-backend --update-env
-              else
-                pm2 start bun --name safe-backend -- run pro
+          PORT="${SERVER_PORT:-22}"
+          ssh-keyscan -p "$PORT" -H "$SERVER_HOST" >> "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy on VPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          PORT="${SERVER_PORT:-22}"
+
+          ssh -p "$PORT" -i "$HOME/.ssh/github_deploy" \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$SERVER_USER@$SERVER_HOST" '
+              set -euo pipefail
+              cd ~/safeindia
+
+              DEPLOY_KEY="$HOME/.ssh/github_deploy"
+              if [ ! -f "$DEPLOY_KEY" ]; then
+                echo "Missing deploy key file: $DEPLOY_KEY"
+                exit 1
               fi
-              pm2 save
-            else
-              mkdir -p logs
-              pkill -f "bun run dist/server.js" || true
-              nohup bun run pro > logs/prod.out 2>&1 < /dev/null &
-            fi
+
+              chmod 600 "$DEPLOY_KEY"
+              export GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+              git fetch origin main
+              git checkout main
+              git pull --ff-only origin main
+
+              if ! command -v bun >/dev/null 2>&1; then
+                echo "bun is required on server for deploy"
+                exit 1
+              fi
+
+              bun install --frozen-lockfile
+              bun run build
+
+              if command -v pm2 >/dev/null 2>&1; then
+                if pm2 describe safe-backend >/dev/null 2>&1; then
+                  pm2 restart safe-backend --update-env
+                else
+                  pm2 start bun --name safe-backend -- run pro
+                fi
+                pm2 save
+              else
+                mkdir -p logs
+                pkill -f "bun run dist/server.js" || true
+                nohup bun run pro > logs/prod.out 2>&1 < /dev/null &
+              fi
+            '
