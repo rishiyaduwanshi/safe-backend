@@ -4,6 +4,7 @@ import { NotFoundError } from '@/utils/appError';
 import appResponse from '@/utils/appResponse';
 import { HttpStatus } from '@/types/common.types';
 import { ReportModel } from '@/models/report.model';
+import { CommentModel } from '@/models/comment.model';
 import UserModel from '@/models/user.model';
 import { processReport } from '@/services/report';
 import { ReportRequest } from '@/validations';
@@ -22,8 +23,13 @@ export const submitReport = async (
     // Run AI classification + severity resolution
     const processed = await processReport(reportText);
 
-    // Auto-escalate to "review" queue when AI confidence is low
-    const status = processed.needsReview ? 'review' : 'pending';
+    // Auto-reject when confidence is extremely low / insufficient detail.
+    // Else auto-escalate to "review" when confidence is low.
+    const status = processed.autoReject
+      ? 'rejected'
+      : processed.needsReview
+        ? 'review'
+        : 'pending';
 
     const report = await ReportModel.create({
       submittedBy: userId,
@@ -38,7 +44,21 @@ export const submitReport = async (
       needsReview: processed.needsReview,
       location,
       status,
+      rejectionReason: processed.autoReject
+        ? (processed.comment ??
+          (processed.key === 'insufficient_detail'
+            ? 'Rejected: insufficient detail'
+            : 'Rejected: low confidence'))
+        : undefined,
     });
+
+    if (processed.comment) {
+      await CommentModel.create({
+        report: report._id,
+        authorRole: (processed.commentRole ?? (processed.autoReject ? 'system' : 'ai')),
+        message: processed.comment,
+      });
+    }
 
     appResponse(res, {
       statusCode: HttpStatus.CREATED,
@@ -87,7 +107,8 @@ export const getReportById = async (
     const report = await ReportModel.findOne({
       _id: id,
       submittedBy: userId,
-    }).select('-__v');
+    })
+      .select('-__v');
 
     if (!report) {
       throw new NotFoundError('Report not found');

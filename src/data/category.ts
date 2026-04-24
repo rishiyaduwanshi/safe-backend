@@ -39,6 +39,18 @@ export const categories: readonly CategoryGroup[] = [
     type: "hazard",
     items: [
       {
+        id: 50,
+        key: "insufficient_detail",
+        label: "Insufficient Detail",
+        description: {
+          eng: "Report text is too vague, irrelevant, or lacks enough details to classify as a real safety incident.",
+          hin: "रिपोर्ट का विवरण बहुत अस्पष्ट/असंबंधित है या किसी वास्तविक सुरक्षा घटना की पहचान के लिए पर्याप्त नहीं है।",
+          hing: "Report ka description vague/irrelevant hai ya incident classify karne ke liye sufficient details nahi hain."
+        },
+        severity: "low",
+        weight: 1,
+      },
+      {
         id: 100,
         key: "pothole",
         label: "Pothole",

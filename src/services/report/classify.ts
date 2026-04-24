@@ -28,6 +28,11 @@ export async function classifyWithAI(text: string) {
         content: `
 You classify public safety incidents reported by citizens in India.
 
+IMPORTANT:
+- If the text is vague, generic, irrelevant, or missing concrete incident details, DO NOT GUESS.
+- In that case, output key "insufficient_detail" with severity "low" and very low confidence.
+- Only pick a specific hazard/violation key when the report contains clear evidence for it.
+
 Select the most appropriate category key from the provided list.
 Adjust severity if situation is extremely serious.
 Return ONLY valid JSON.
