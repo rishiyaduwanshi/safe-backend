@@ -87,4 +87,13 @@ ReportSchema.virtual('comments', {
   options: { sort: { createdAt: 1 } },
 });
 
+// User-visible comments only (no internal AI telemetry)
+ReportSchema.virtual('publicComments', {
+  ref: 'Comment',
+  localField: '_id',
+  foreignField: 'report',
+  match: { authorRole: { $in: ['system', 'moderator'] } },
+  options: { sort: { createdAt: 1 } },
+});
+
 export const ReportModel = mongoose.model("Report", ReportSchema);

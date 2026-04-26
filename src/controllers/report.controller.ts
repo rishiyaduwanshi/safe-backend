@@ -108,7 +108,8 @@ export const getReportById = async (
       _id: id,
       submittedBy: userId,
     })
-      .select('-__v');
+      .select('-__v')
+      .populate('publicComments');
 
     if (!report) {
       throw new NotFoundError('Report not found');
