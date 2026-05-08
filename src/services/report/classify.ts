@@ -12,7 +12,7 @@ const classificationSchema = z.object({
   key: z.string(),
   severity: z.enum(["low", "medium", "high", "critical"]),
   confidence: z.number().min(0).max(1),
-  comment: z.string().max(500).nullable().optional(),
+  comment: z.string().max(500).nullable(),
 });
 
 
@@ -99,7 +99,7 @@ Return ONLY valid JSON matching the provided schema.
             confidence: { type: "number" },
             comment: { type: ["string", "null"] },
           },
-          required: ["key", "severity", "confidence"],
+          required: ["key", "severity", "confidence", "comment"],
           additionalProperties: false,
         },
         strict: true,
