@@ -10,7 +10,8 @@
     "start": "bun run server.ts",
     "pro": "bun run dist/server.js",
     "build": "bun build server.ts --outdir ./dist --target bun",
-    "seed:mod": "bun run --env-file=.env.dev src/seeds/mod.seed.js"
+    "seed:mod": "bun run --env-file=.env.dev src/seeds/mod.seed.js",
+    "seed:users": "bun run --env-file=.env.dev src/seeds/user.seed.js"
   },
   "keywords": [],
   "author": "",
