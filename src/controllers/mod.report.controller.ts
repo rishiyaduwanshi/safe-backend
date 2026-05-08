@@ -2,10 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { ReportModel } from '@/models/report.model';
 import { CommentModel } from '@/models/comment.model';
 import { CssEventModel } from '@/models/cssEvent.model';
+import { NotificationModel } from '@/models/notification.model';
 import UserModel from '@/models/user.model';
 import appResponse from '@/utils/appResponse';
 import { BadRequestError, NotFoundError } from '@/utils/appError';
 import { buildModerationCssUpdatePipeline, CSS_BASELINE, getCssDeltaForDecision } from '@/services/css';
+import { sendPushToUser } from '@/services/push';
 import { flatCategory } from '@/data/category';
 
 // Allowed filters
@@ -234,6 +236,32 @@ export const approveReport = async (
       note: comment,
     });
 
+    const categoryKey = report.category?.key ? String(report.category.key) : '';
+    const noteText = comment ? ` Note: ${comment}` : '';
+    await NotificationModel.create({
+      user: report.submittedBy,
+      type: 'report_status',
+      title: 'Report Approved',
+      message: `Your report${categoryKey ? ` (${categoryKey})` : ''} was approved.${noteText}`.trim(),
+      entityType: 'report',
+      entityId: report._id,
+      data: {
+        status: 'approved',
+        reportId: report._id,
+        categoryKey: categoryKey || null,
+        categoryId: report.category?.id ?? null,
+        cssDelta: delta,
+        cssAfter: nextCss,
+      },
+    });
+
+    await sendPushToUser(report.submittedBy, {
+      title: 'Report Approved',
+      body: `Your report${categoryKey ? ` (${categoryKey})` : ''} was approved.`,
+      url: `/reports?id=${encodeURIComponent(String(report._id))}`,
+      data: { reportId: String(report._id), status: 'approved' },
+    });
+
     appResponse(res, {
       message: 'Report approved',
       data: {
@@ -315,6 +343,33 @@ export const rejectReport = async (
       previousCss,
       nextCss,
       note: comment || reason,
+    });
+
+    const categoryKey = report.category?.key ? String(report.category.key) : '';
+    const noteValue = comment || reason;
+    const noteText = noteValue ? ` Note: ${noteValue}` : '';
+    await NotificationModel.create({
+      user: report.submittedBy,
+      type: 'report_status',
+      title: 'Report Rejected',
+      message: `Your report${categoryKey ? ` (${categoryKey})` : ''} was rejected.${noteText}`.trim(),
+      entityType: 'report',
+      entityId: report._id,
+      data: {
+        status: 'rejected',
+        reportId: report._id,
+        categoryKey: categoryKey || null,
+        categoryId: report.category?.id ?? null,
+        cssDelta: delta,
+        cssAfter: nextCss,
+      },
+    });
+
+    await sendPushToUser(report.submittedBy, {
+      title: 'Report Rejected',
+      body: `Your report${categoryKey ? ` (${categoryKey})` : ''} was rejected.`,
+      url: `/reports?id=${encodeURIComponent(String(report._id))}`,
+      data: { reportId: String(report._id), status: 'rejected' },
     });
 
     appResponse(res, {

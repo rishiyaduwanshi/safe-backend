@@ -14,7 +14,7 @@ app.set('trust proxy', true);
 if (config.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 } else {
-  app.set('trust proxy', false); 
+  app.set('trust proxy', false);
 }
 
 // Middleware
@@ -34,6 +34,8 @@ import adminRoutes from './routes/admin.routes';
 import licenseRoutes from './routes/license.routes';
 import profileRoutes from './routes/profile.routes';
 import moderatorRoutes from './routes/moderator.routes';
+import notificationRoutes from './routes/notification.routes';
+import pushRoutes from './routes/push.routes';
 
 // API routes
 const api = express.Router();
@@ -45,6 +47,8 @@ api.use('/admin', adminRoutes);
 api.use('/license', licenseRoutes);
 api.use('/profile', profileRoutes);
 api.use('/moderator', moderatorRoutes);
+api.use('/notifications', notificationRoutes);
+api.use('/push', pushRoutes);
 
 app.use(`/api/v${config.VERSION.split('.')[0]}`, api);
 
