@@ -92,7 +92,9 @@ ReportSchema.virtual('publicComments', {
   ref: 'Comment',
   localField: '_id',
   foreignField: 'report',
-  match: { authorRole: { $in: ['system', 'moderator'] } },
+  // Comments visible to end users. We include AI notes too, but the frontend may
+  // choose to label them as "System" for a simpler UX.
+  match: { authorRole: { $in: ['system', 'moderator', 'ai', 'admin'] } },
   options: { sort: { createdAt: 1 } },
 });
 

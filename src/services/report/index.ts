@@ -22,44 +22,6 @@ const isInsufficientDetailText = (text: string): boolean => {
   return false;
 };
 
-const isLikelyVagueReport = (text: string): boolean => {
-  const t = (text ?? '').trim().toLowerCase();
-  if (!t) return true;
-
-  // If it doesn't mention any concrete incident markers, treat as vague.
-  // (Bias towards rejecting vague reports during development.)
-  const incidentTokens = [
-    'pothole',
-    'gadda',
-    'crack',
-    'broken',
-    'water',
-    'logging',
-    'manhole',
-    'streetlight',
-    'signal',
-    'helmet',
-    'speed',
-    'drunk',
-    'parking',
-    'wrong side',
-    'accident',
-    'hit',
-    'injury',
-  ];
-
-  const hasIncidentToken = incidentTokens.some((token) => t.includes(token));
-  if (hasIncidentToken) return false;
-
-  // If it looks like a generic complaint without specifics.
-  if (/(problem|issue|help|bad|not good|something wrong|unsafe|danger)/.test(t)) {
-    return true;
-  }
-
-  // If it has no incident token and is not long, assume vague.
-  return t.length < 80;
-};
-
 const severityRank: Record<Severity, number> = {
   low: 1,
   medium: 2,
@@ -91,18 +53,19 @@ export async function processReport(text: string) {
         confidence: 0,
         needsReview: false,
         autoReject: true,
-        commentRole: 'system' as const,
-        comment: 'Rejected: insufficient details. Please describe the issue clearly (what happened + where + any useful context).',
+        comments: [
+          {
+            authorRole: 'system' as const,
+            message:
+              'Rejected: insufficient details. Please describe the issue clearly (what happened + where + any useful context).',
+          },
+        ],
       };
     }
 
     const aiResult = await classifyWithAI(text);
 
-    // If the text is vague and AI is unsure, do not guess a hazard — mark as insufficient detail.
-    const forceInsufficient =
-      aiResult.confidence < 0.35 && isLikelyVagueReport(text);
-
-    const effectiveKey = forceInsufficient ? 'insufficient_detail' : aiResult.key;
+    const effectiveKey = aiResult.key;
 
     const category = flatCategory.find((c) => c.key === effectiveKey);
 
@@ -119,33 +82,36 @@ export async function processReport(text: string) {
     const autoReject =
       aiResult.confidence < AUTO_REJECT_THRESHOLD || effectiveKey === 'insufficient_detail';
 
-    const commentRole = forceInsufficient
-      ? ('system' as const)
-      : effectiveKey === 'insufficient_detail'
-        ? ('ai' as const)
-        : autoReject
-          ? ('system' as const)
-          : needsReview
-            ? ('system' as const)
-            : null;
+    const comments: Array<{
+      authorRole: 'ai' | 'system';
+      message: string;
+    }> = [];
 
-    const comment = commentRole
-      ? effectiveKey === 'insufficient_detail'
-        ? 'Not enough information to classify this report. Please add clear details (what happened + where + when) so it can be reviewed.'
-        : autoReject
-          ? 'Rejected: the report could not be classified confidently. Please add more details and try again.'
-          : needsReview
-            ? 'Needs review: low confidence classification. Please review and adjust category if needed.'
-            : null
-      : null;
+    if (typeof aiResult.comment === 'string' && aiResult.comment.trim()) {
+      comments.push({
+        authorRole: 'ai',
+        message: aiResult.comment.trim(),
+      });
+    }
+
+    if (autoReject) {
+      comments.push({
+        authorRole: 'system',
+        message:
+          effectiveKey === 'insufficient_detail'
+            ? 'Rejected: not enough incident details to classify. Please add what happened + where + when.'
+            : 'Rejected: the report could not be classified confidently. Please add more details and try again.',
+      });
+    } else if (needsReview) {
+      comments.push({
+        authorRole: 'system',
+        message: 'Needs review: low confidence classification. Please review and adjust category if needed.',
+      });
+    }
 
     reportLogger.info(
       `AI raw → key: ${aiResult.key}, severity: ${aiResult.severity}, confidence: ${aiResult.confidence}`
     );
-
-    if (forceInsufficient) {
-      reportLogger.info('Override → insufficient_detail (vague text + low confidence)');
-    }
 
     reportLogger.info(
       `Final decision → id: ${category.id}, severity: ${finalSeverity}, review: ${needsReview}`
@@ -159,8 +125,7 @@ export async function processReport(text: string) {
       confidence: aiResult.confidence,
       needsReview,
       autoReject,
-      commentRole,
-      comment,
+      comments,
     };
   } catch (error: any) {
     reportLogger.error(`Processing failed: ${error.message}`);

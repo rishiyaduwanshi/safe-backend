@@ -45,18 +45,35 @@ export const submitReport = async (
       location,
       status,
       rejectionReason: processed.autoReject
-        ? (processed.comment ??
+        ? (
+          processed.comments?.find((c) => c.authorRole === 'system')?.message ??
+          processed.comments?.[0]?.message ??
           (processed.key === 'insufficient_detail'
             ? 'Rejected: insufficient detail'
-            : 'Rejected: low confidence'))
+            : 'Rejected: low confidence')
+        )
         : undefined,
     });
 
-    if (processed.comment) {
+    const comments = Array.isArray((processed as any).comments)
+      ? ((processed as any).comments as Array<{ authorRole: string; message: string }>).
+        filter((c) => c && typeof c.message === 'string' && c.message.trim())
+      : [];
+
+    if (comments.length > 0) {
+      await CommentModel.insertMany(
+        comments.map((c) => ({
+          report: report._id,
+          authorRole: c.authorRole,
+          message: c.message,
+        }))
+      );
+    } else if ((processed as any).comment) {
+      // Backward-compat fallback
       await CommentModel.create({
         report: report._id,
-        authorRole: (processed.commentRole ?? (processed.autoReject ? 'system' : 'ai')),
-        message: processed.comment,
+        authorRole: (processed as any).commentRole ?? (processed.autoReject ? 'system' : 'ai'),
+        message: (processed as any).comment,
       });
     }
 
