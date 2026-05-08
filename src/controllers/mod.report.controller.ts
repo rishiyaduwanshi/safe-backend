@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { ReportModel } from '@/models/report.model';
 import { CommentModel } from '@/models/comment.model';
+import { CssEventModel } from '@/models/cssEvent.model';
 import UserModel from '@/models/user.model';
 import appResponse from '@/utils/appResponse';
 import { BadRequestError, NotFoundError } from '@/utils/appError';
-import { buildModerationCssUpdatePipeline } from '@/services/css';
+import { buildModerationCssUpdatePipeline, CSS_BASELINE, getCssDeltaForDecision } from '@/services/css';
 import { flatCategory } from '@/data/category';
 
 // Allowed filters
@@ -202,10 +203,36 @@ export const approveReport = async (
       message: comment ? `Approved by moderator: ${comment}` : 'Approved by moderator',
     });
 
-    await UserModel.findByIdAndUpdate(
+    const cssBefore = await UserModel.findById(report.submittedBy)
+      .select('css cssInitialized')
+      .lean();
+
+    const cssAfter = await UserModel.findByIdAndUpdate(
       report.submittedBy,
-      buildModerationCssUpdatePipeline(report.category?.id, 'approved')
-    );
+      buildModerationCssUpdatePipeline(report.category?.id, 'approved'),
+      { new: true }
+    )
+      .select('css cssInitialized')
+      .lean();
+
+    const previousCss = cssBefore
+      ? (cssBefore.cssInitialized || cssBefore.css > 0 ? cssBefore.css : CSS_BASELINE)
+      : CSS_BASELINE;
+
+    const nextCss = typeof cssAfter?.css === 'number' ? cssAfter.css : previousCss;
+    const delta = getCssDeltaForDecision(report.category?.id, 'approved');
+
+    await CssEventModel.create({
+      user: report.submittedBy,
+      report: report._id,
+      moderator: req.moderator?.id ?? null,
+      decision: 'approved',
+      categoryId: report.category?.id ?? null,
+      delta,
+      previousCss,
+      nextCss,
+      note: comment,
+    });
 
     appResponse(res, {
       message: 'Report approved',
@@ -259,10 +286,36 @@ export const rejectReport = async (
       message,
     });
 
-    await UserModel.findByIdAndUpdate(
+    const cssBefore = await UserModel.findById(report.submittedBy)
+      .select('css cssInitialized')
+      .lean();
+
+    const cssAfter = await UserModel.findByIdAndUpdate(
       report.submittedBy,
-      buildModerationCssUpdatePipeline(report.category?.id, 'rejected')
-    );
+      buildModerationCssUpdatePipeline(report.category?.id, 'rejected'),
+      { new: true }
+    )
+      .select('css cssInitialized')
+      .lean();
+
+    const previousCss = cssBefore
+      ? (cssBefore.cssInitialized || cssBefore.css > 0 ? cssBefore.css : CSS_BASELINE)
+      : CSS_BASELINE;
+
+    const nextCss = typeof cssAfter?.css === 'number' ? cssAfter.css : previousCss;
+    const delta = getCssDeltaForDecision(report.category?.id, 'rejected');
+
+    await CssEventModel.create({
+      user: report.submittedBy,
+      report: report._id,
+      moderator: req.moderator?.id ?? null,
+      decision: 'rejected',
+      categoryId: report.category?.id ?? null,
+      delta,
+      previousCss,
+      nextCss,
+      note: comment || reason,
+    });
 
     appResponse(res, {
       message: 'Report rejected',

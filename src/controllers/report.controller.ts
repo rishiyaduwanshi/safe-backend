@@ -6,6 +6,7 @@ import { HttpStatus } from '@/types/common.types';
 import { ReportModel } from '@/models/report.model';
 import { CommentModel } from '@/models/comment.model';
 import UserModel from '@/models/user.model';
+import { CssEventModel } from '@/models/cssEvent.model';
 import { processReport } from '@/services/report';
 import { ReportRequest } from '@/validations';
 
@@ -161,7 +162,7 @@ export const getMyStats = async (
     const hasCssHistory = Boolean(user?.cssInitialized || css > 0);
 
     // Status counts + month deltas — all in one aggregation
-    const [counts, monthly] = await Promise.all([
+    const [counts, monthly, cssHistory] = await Promise.all([
       ReportModel.aggregate<{ _id: string; count: number }>([
         { $match: { submittedBy: new mongoose.Types.ObjectId(userId) } },
         { $group: { _id: '$status', count: { $sum: 1 } } },
@@ -182,6 +183,11 @@ export const getMyStats = async (
         },
         { $project: { month: '$_id.month', year: '$_id.year', count: 1, _id: 0 } },
       ]),
+      CssEventModel.find({ user: new mongoose.Types.ObjectId(userId) })
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .select('decision categoryId delta previousCss nextCss report createdAt note')
+        .lean(),
     ]);
 
     // Build counts map
@@ -208,6 +214,7 @@ export const getMyStats = async (
       data: {
         css,
         hasCssHistory,
+        cssHistory,
         maxCss: 1000,
         improvementFromLastMonth: thisMonthCount - lastMonthCount,
         counts: {

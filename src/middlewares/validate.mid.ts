@@ -16,7 +16,21 @@ export function validateRequest<T extends z.ZodTypeAny>(
             const data = req[source];
             const validated = schema.parse(data);
 
-            req[source] = validated;
+            if (source === 'body') {
+                req.body = validated;
+            } else {
+                const target = req[source] as unknown;
+                if (target && typeof target === 'object') {
+                    for (const key of Object.keys(target as Record<string, unknown>)) {
+                        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+                        delete (target as Record<string, unknown>)[key];
+                    }
+                    Object.assign(target as Record<string, unknown>, validated);
+                } else {
+                    // Fallback (should rarely happen)
+                    (req as unknown as Record<string, unknown>)[source] = validated;
+                }
+            }
 
             next();
         } catch (error) {

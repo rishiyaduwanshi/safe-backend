@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '@/middlewares/auth.mid';
+import { authenticate, requireActiveUser } from '@/middlewares/auth.mid';
 import { saveProfile, getMyProfile } from '@/controllers/profile.controller';
 
 const router = Router();
@@ -8,6 +8,6 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/me', getMyProfile);
-router.post('/save', saveProfile);
+router.post('/save', requireActiveUser, saveProfile);
 
 export default router;

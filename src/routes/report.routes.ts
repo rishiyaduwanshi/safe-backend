@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import {
-    submitReport,
-    getMyReports,
-    getReportById,
-    getMyStats,
+  submitReport,
+  getMyReports,
+  getReportById,
+  getMyStats,
 } from '@/controllers/report.controller';
-import { authenticate, requireProfile } from '@/middlewares/auth.mid';
+import { authenticate, requireActiveUser, requireProfile } from '@/middlewares/auth.mid';
 import { validateBody, validateParams } from '@/middlewares/validate.mid';
 import { reportSchema, reportParamsSchema } from '@/validations';
 
@@ -16,7 +16,7 @@ const router: Router = Router();
  * @desc    Submit a new safety report
  * @access  Private — user must have completed DL verification (profileId set)
  */
-router.post('/', authenticate, requireProfile, validateBody(reportSchema), submitReport);
+router.post('/', authenticate, requireActiveUser, requireProfile, validateBody(reportSchema), submitReport);
 
 /**
  * @route   GET /api/v1/reports/me

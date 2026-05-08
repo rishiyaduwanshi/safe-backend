@@ -8,6 +8,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: UserRole;
+  isActive: boolean;
   profileId: mongoose.Types.ObjectId | null; // set after DL verification
   refreshToken: string | null;
   css: number; // Citizen Safety Score — stored, updated on approve/reject
@@ -51,6 +52,10 @@ const userSchema = new Schema<IUser, IUserModel>(
       type: String,
       enum: Object.values(UserRole),
       default: UserRole.USER,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
     profileId: {
       type: mongoose.Schema.Types.ObjectId,

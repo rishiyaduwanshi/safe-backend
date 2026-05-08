@@ -5,6 +5,7 @@ import { JwtPayload, ModeratorJwtPayload, UserRole } from '@/types/common.types'
 import { ForbiddenError, UnauthorizedError } from '@/utils/appError';
 import { Permission } from '@/data/permissions';
 import Profile from '@/models/profile.model';
+import UserModel from '@/models/user.model';
 
 /**
  * Middleware to authenticate JWT tokens from cookies
@@ -86,6 +87,42 @@ export const requireProfile = async (
       next(new ForbiddenError(
         'Profile setup required. Please verify your Driving License on your Profile page before submitting a report.'
       ));
+      return;
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Blocks write actions for deactivated citizen accounts.
+ * Users can still authenticate (login) so the UI can show "deactivated" state.
+ */
+export const requireActiveUser = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
+    // Only applies to regular citizen users.
+    if ((req.user.role ?? UserRole.USER) !== UserRole.USER) {
+      next();
+      return;
+    }
+
+    const user = await UserModel.findById(req.user.id).select('isActive').lean();
+    if (!user) {
+      throw new UnauthorizedError('Invalid user');
+    }
+
+    if (user.isActive === false) {
+      next(new ForbiddenError('Account is deactivated. You can view your data but cannot perform this action.'));
       return;
     }
 

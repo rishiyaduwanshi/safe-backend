@@ -16,6 +16,7 @@ interface UserResponseData {
   name: string;
   email: string;
   role: string;
+  isActive?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -30,6 +31,7 @@ const toUserResponse = (user: IUser): UserResponseData => ({
   name: user.name,
   email: user.email,
   role: user.role,
+  isActive: user.isActive !== false,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
@@ -164,12 +166,15 @@ export const me = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // req.user is fully populated by authenticate middleware from JWT
-    const { id, name, email, role } = req.user!;
+    const { id } = req.user!;
+    const user = await UserModel.findById(id);
+    if (!user) {
+      throw new UnauthorizedError('Invalid user');
+    }
 
     appResponse<AuthResponseData>(res, {
       message: 'User fetched successfully',
-      data: { user: { id, name, email, role } },
+      data: { user: toUserResponse(user) },
     });
   } catch (error) {
     next(error);
